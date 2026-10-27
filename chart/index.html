@@ -158,8 +158,8 @@ tbody tr.is-prod{background:var(--track)}
 <div class="wrap">
   <header>
     <p class="eyebrow" id="eyebrow"></p>
-    <h1>A better embedder beats a better reranker</h1>
-    <p class="deck">Six retrieval pipelines on the same customer-support knowledge base, scored on whether the right document lands in the top 3. Swapping the embedding model moves the number roughly twice as far as bolting a reranker onto the old one — and the gap widens exactly where it hurts, on hard questions.</p>
+    <h1>Your retrieval score is mostly your question mix</h1>
+    <p class="deck">Four retrieval pipelines over a public help centre, scored on whether the right document lands in the top 3. Changing the question difficulty moves that number by 41 to 60 points. Changing the pipeline moves it by 15. And here the reranker did more work than the embedding model — the reverse of the analysis this reproduces.</p>
   </header>
 
   <div class="tiles" id="tiles"></div>
@@ -197,6 +197,7 @@ tbody tr.is-prod{background:var(--track)}
         <li>Answer quality — retrieval is necessary, not sufficient.</li>
         <li>Latency and cost per query, which a reranker adds to.</li>
         <li>Generalisation: one corpus, one question set, one language.</li>
+        <li>Anything useful about the easy split — every pipeline is at or near ceiling there.</li>
       </ul>
     </div>
   </section>
@@ -206,10 +207,10 @@ tbody tr.is-prod{background:var(--track)}
 
 <script>
 /* BENCH-DATA:START */
-const CONFIGS=[{"id":"small","label":"Titan V2","family":"a"},{"id":"small_rerank","label":"Titan V2 + Amazon reranker","family":"a","production":true},{"id":"small_rerank2","label":"Titan V2 + Qwen3 reranker","family":"a"},{"id":"large","label":"OpenAI 3-large","family":"b"},{"id":"large_rerank","label":"OpenAI 3-large + Amazon reranker","family":"b"},{"id":"large_rerank2","label":"OpenAI 3-large + Qwen3 reranker","family":"b"}];
-const PANELS=[{"id":"all","label":"All questions","n":"n = 735"},{"id":"easy","label":"Easy questions","n":""},{"id":"medium","label":"Medium questions","n":""},{"id":"hard","label":"Hard questions","n":""}];
-const DATA={"all":{"small":75,"small_rerank":80,"small_rerank2":81,"large":88,"large_rerank":89,"large_rerank2":91},"easy":{"small":90,"small_rerank":92,"small_rerank2":93,"large":93,"large_rerank":96,"large_rerank2":96},"medium":{"small":77,"small_rerank":82,"small_rerank2":83,"large":89,"large_rerank":89,"large_rerank2":93},"hard":{"small":59,"small_rerank":64,"small_rerank2":67,"large":82,"large_rerank":82,"large_rerank2":85}};
-const META={"corpus":"Customer-support knowledge base","n_questions":735,"n_documents":0,"n_chunks":0,"candidate_k":0,"tiles":[{"delta":13,"what":"Swapping the embedder, no reranker on either side","from":"75% \u2192 88%","tone":"b"},{"delta":6,"what":"Best reranker bolted onto the old embedder","from":"75% \u2192 81%","tone":"a"},{"delta":23,"what":"Same embedder swap, hard questions only","from":"59% \u2192 82%","tone":"b"},{"delta":11,"what":"Today's production pipeline \u2192 best pipeline tested","from":"80% \u2192 91%","tone":"b"}],"families":[{"key":"a","label":"Amazon Titan Text Embeddings V2"},{"key":"b","label":"OpenAI text-embedding-3-large (3072d)"}]};
+const CONFIGS=[{"id":"small","label":"3-small","family":"a"},{"id":"small_rerank","label":"3-small + Cohere rerank","family":"a","production":true},{"id":"large","label":"3-large","family":"b"},{"id":"large_rerank","label":"3-large + Cohere rerank","family":"b"}];
+const PANELS=[{"id":"all","label":"All questions","n":"n = 705"},{"id":"easy","label":"Easy questions","n":""},{"id":"medium","label":"Medium questions","n":""},{"id":"hard","label":"Hard questions","n":""}];
+const DATA={"all":{"small":69,"small_rerank":80,"large":77,"large_rerank":84},"easy":{"small":96,"small_rerank":100,"large":98,"large_rerank":100},"medium":{"small":74,"small_rerank":87,"large":81,"large_rerank":92},"hard":{"small":36,"small_rerank":52,"large":52,"large_rerank":59}};
+const META={"corpus":"GitHub Docs help centre","n_questions":705,"n_documents":2864,"n_chunks":10506,"candidate_k":20,"tiles":[{"delta":8,"what":"Swapping the embedder, no reranker on either side","from":"69% → 77%","tone":"b"},{"delta":11,"what":"Best reranker bolted onto the old embedder","from":"69% → 80%","tone":"a"},{"delta":15,"what":"Same embedder swap, hard questions only","from":"36% → 52%","tone":"b"},{"delta":4,"what":"Today's production pipeline → best pipeline tested","from":"80% → 84%","tone":"b"}],"families":[{"key":"a","label":"openai/text-embedding-3-small"},{"key":"b","label":"openai/text-embedding-3-large"}]};
 /* BENCH-DATA:END */
 const PROD=(CONFIGS.find(c=>c.production)||CONFIGS[0]).id;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

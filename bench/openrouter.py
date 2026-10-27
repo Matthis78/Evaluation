@@ -92,6 +92,7 @@ class OpenRouter:
         self.cost = 0.0           # credits spent on calls that actually hit the API
         self.api_calls = 0
         self.cache_hits = 0
+        self.uncosted_calls = 0   # responses that carried no usage.cost
 
     # -- transport ---------------------------------------------------------
 
@@ -119,9 +120,11 @@ class OpenRouter:
                     self.api_calls += 1
                 body = r.json()
                 usage = body.get("usage") or {}
-                if usage.get("cost"):
-                    with self._cost_lock:
+                with self._cost_lock:
+                    if usage.get("cost"):
                         self.cost += float(usage["cost"])
+                    else:
+                        self.uncosted_calls += 1
                 return body
 
             if r.status_code in (429, 500, 502, 503, 504):
@@ -217,7 +220,12 @@ class OpenRouter:
             self.cache_hits += 1
             return hit
 
-        payload: dict[str, Any] = {"model": model, "messages": messages, "temperature": temperature}
+        # Without usage.include, chat/completions omits cost and the run total
+        # silently under-reports by most of what the question set costs.
+        payload: dict[str, Any] = {
+            "model": model, "messages": messages, "temperature": temperature,
+            "usage": {"include": True},
+        }
         if max_tokens:
             payload["max_tokens"] = max_tokens
         if json_mode:
@@ -228,7 +236,13 @@ class OpenRouter:
         return text
 
     def summary(self) -> str:
-        return (
+        out = (
             f"{self.api_calls} API calls, {self.cache_hits} cache hits, "
             f"${self.cost:.4f} spent this run"
         )
+        if self.uncosted_calls:
+            out += (
+                f" (floor: {self.uncosted_calls} responses carried no cost — "
+                "check your OpenRouter activity page for the real total)"
+            )
+        return out

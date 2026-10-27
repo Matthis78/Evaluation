@@ -26,21 +26,31 @@ questions:
 retrieval:
   candidate_k: 20            # chunks the vector search hands to the reranker
 
-# Two embedder families x {no reranker, reranker}. Family order matters: the
-# first is the incumbent, the last is the challenger, and the report compares
-# them. `production: true` marks the pipeline everything is measured against.
+# Two embedder families x {no reranker, reranker A, reranker B}. Family order
+# matters: the first is the incumbent, the last is the challenger, and the
+# report compares them. `production: true` marks the pipeline everything is
+# measured against.
+#
+# Slugs below were confirmed against `python -m bench models` on 2026-10-27.
+# Amazon has no reranker on OpenRouter, so Cohere stands in for it.
 pipelines:
-  - id: small
-    label: "3-small"
-    embedder: "openai/text-embedding-3-small"
+  - id: titan
+    label: "Titan V2"
+    embedder: "amazon/titan-embed-text-v2"
     family: incumbent
 
-  - id: small_rerank
-    label: "3-small + Cohere rerank"
-    embedder: "openai/text-embedding-3-small"
+  - id: titan_cohere
+    label: "Titan V2 + Cohere rerank"
+    embedder: "amazon/titan-embed-text-v2"
     reranker: "cohere/rerank-v3.5"
     family: incumbent
     production: true
+
+  - id: titan_qwen
+    label: "Titan V2 + Qwen3 rerank"
+    embedder: "amazon/titan-embed-text-v2"
+    reranker: "qwen/qwen3-reranker-8b"
+    family: incumbent
 
   - id: large
     label: "3-large"
@@ -48,27 +58,27 @@ pipelines:
     dimensions: 3072
     family: challenger
 
-  - id: large_rerank
+  - id: large_cohere
     label: "3-large + Cohere rerank"
     embedder: "openai/text-embedding-3-large"
     dimensions: 3072
     reranker: "cohere/rerank-v3.5"
     family: challenger
 
-# Add a second reranker once `python -m bench models` confirms the slug, to get
-# the full 6-pipeline matrix:
-#
-#  - id: small_rerank2
-#    label: "3-small + <reranker>"
-#    embedder: "openai/text-embedding-3-small"
-#    reranker: "<slug from bench models>"
-#    family: incumbent
-#  - id: large_rerank2
-#    label: "3-large + <reranker>"
-#    embedder: "openai/text-embedding-3-large"
-#    dimensions: 3072
-#    reranker: "<slug from bench models>"
-#    family: challenger
+  - id: large_qwen
+    label: "3-large + Qwen3 rerank"
+    embedder: "openai/text-embedding-3-large"
+    dimensions: 3072
+    reranker: "qwen/qwen3-reranker-8b"
+    family: challenger
+
+# Other slugs `bench models` reported, if you want to widen the matrix:
+#   embedders  qwen/qwen3-embedding-8b, voyageai/voyage-4-large,
+#              google/gemini-embedding-2, baai/bge-m3,
+#              intfloat/multilingual-e5-large (good for non-English corpora),
+#              nvidia/nemotron-3.5-embed-8b:free
+#   rerankers  cohere/rerank-4-pro, voyageai/rerank-3,
+#              nvidia/nemotron-3.5-rerank-8b:free
 #
 # `input_type: true` sends search_query / search_document. Asymmetric models
-# (Cohere, Voyage, Nvidia embeddings) need it; OpenAI's do not.
+# (Cohere, Voyage, Nvidia embeddings) need it; OpenAI's and Titan do not.

@@ -68,7 +68,12 @@ def cmd_models(args, cfg) -> None:
     for m in sorted(rows, key=lambda m: m.get("id", "")):
         print(f"  {m.get('id')}")
 
-    r = requests.get(f"{c.base_url}/models", headers=c._headers(), timeout=60)
+    # /models with no params returns only text/image/audio models — rerankers
+    # (and the :batch embedding variants) need output_modalities=all.
+    r = requests.get(
+        f"{c.base_url}/models", headers=c._headers(),
+        params={"output_modalities": "all"}, timeout=60,
+    )
     r.raise_for_status()
     rr = [m for m in r.json().get("data", []) if "rerank" in (m.get("id") or "").lower()]
     print(f"\nrerank models ({len(rr)}):")
