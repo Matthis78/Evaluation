@@ -1,0 +1,29 @@
+{
+  "metric": "recall@3",
+  "metric_label": "Right document in the top 3",
+  "metric_definition": "Share of questions for which the gold document appears in the top 3 results after reranking.",
+  "corpus": "Customer-support knowledge base",
+  "n_questions": 735,
+  "difficulties": ["easy", "medium", "hard"],
+  "notes": [
+    "OpenAI text-embedding-3-large run at 3072 dimensions.",
+    "Rerankers re-score the vector-search candidates; the top 3 are kept.",
+    "Titan V2 + Amazon reranker is the production pipeline today.",
+    "Values are whole percentage points, as reported."
+  ],
+  "source": "Screenshot of the final analysis, reproduced 2026-10-27. Replace with your own run.",
+  "configs": [
+    { "id": "titan",      "label": "Titan V2",                         "embedder": "Amazon Titan Text Embeddings V2",  "reranker": null,               "family": "titan" },
+    { "id": "titan_amz",  "label": "Titan V2 + Amazon reranker",       "embedder": "Amazon Titan Text Embeddings V2",  "reranker": "Amazon Rerank",    "family": "titan",  "production": true },
+    { "id": "titan_qwen", "label": "Titan V2 + Qwen3 reranker",        "embedder": "Amazon Titan Text Embeddings V2",  "reranker": "Qwen3-Reranker",   "family": "titan" },
+    { "id": "oai",        "label": "OpenAI 3-large",                   "embedder": "OpenAI text-embedding-3-large",    "reranker": null,               "family": "openai" },
+    { "id": "oai_amz",    "label": "OpenAI 3-large + Amazon reranker", "embedder": "OpenAI text-embedding-3-large",    "reranker": "Amazon Rerank",    "family": "openai" },
+    { "id": "oai_qwen",   "label": "OpenAI 3-large + Qwen3 reranker",  "embedder": "OpenAI text-embedding-3-large",    "reranker": "Qwen3-Reranker",   "family": "openai" }
+  ],
+  "results": {
+    "all":    { "titan": 75, "titan_amz": 80, "titan_qwen": 81, "oai": 88, "oai_amz": 89, "oai_qwen": 91 },
+    "easy":   { "titan": 90, "titan_amz": 92, "titan_qwen": 93, "oai": 93, "oai_amz": 96, "oai_qwen": 96 },
+    "medium": { "titan": 77, "titan_amz": 82, "titan_qwen": 83, "oai": 89, "oai_amz": 89, "oai_qwen": 93 },
+    "hard":   { "titan": 59, "titan_amz": 64, "titan_qwen": 67, "oai": 82, "oai_amz": 82, "oai_qwen": 85 }
+  }
+}

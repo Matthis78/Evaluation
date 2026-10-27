@@ -1,0 +1,6 @@
+.cache/
+data/
+results/run.json
+__pycache__/
+*.pyc
+.venv/

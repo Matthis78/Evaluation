@@ -1,0 +1,74 @@
+# RAG retrieval benchmark — one OpenRouter key covers embeddings, rerank and
+# the question-generation LLM.
+#
+# Step 0: `python -m bench models` prints the slugs your key can actually
+# reach. Model availability moves; paste the ones you want below.
+
+concurrency: 8
+cache_path: .cache/openrouter.sqlite
+
+corpus:
+  name: "GitHub Docs help centre"
+  repo: "https://github.com/github/docs.git"
+  subdir: "content"          # 3,700+ public help articles, CC BY 4.0
+
+chunking:
+  target_chars: 1500         # ~375 tokens
+  hard_max: 4000
+  min_chars: 220
+
+questions:
+  n_chunks: 250              # x3 difficulties = ~750 questions before validation
+  seed: 20261027
+  model: "anthropic/claude-sonnet-4.5"
+  validator_model: "anthropic/claude-sonnet-4.5"
+
+retrieval:
+  candidate_k: 20            # chunks the vector search hands to the reranker
+
+# Two embedder families x {no reranker, reranker}. Family order matters: the
+# first is the incumbent, the last is the challenger, and the report compares
+# them. `production: true` marks the pipeline everything is measured against.
+pipelines:
+  - id: small
+    label: "3-small"
+    embedder: "openai/text-embedding-3-small"
+    family: incumbent
+
+  - id: small_rerank
+    label: "3-small + Cohere rerank"
+    embedder: "openai/text-embedding-3-small"
+    reranker: "cohere/rerank-v3.5"
+    family: incumbent
+    production: true
+
+  - id: large
+    label: "3-large"
+    embedder: "openai/text-embedding-3-large"
+    dimensions: 3072
+    family: challenger
+
+  - id: large_rerank
+    label: "3-large + Cohere rerank"
+    embedder: "openai/text-embedding-3-large"
+    dimensions: 3072
+    reranker: "cohere/rerank-v3.5"
+    family: challenger
+
+# Add a second reranker once `python -m bench models` confirms the slug, to get
+# the full 6-pipeline matrix:
+#
+#  - id: small_rerank2
+#    label: "3-small + <reranker>"
+#    embedder: "openai/text-embedding-3-small"
+#    reranker: "<slug from bench models>"
+#    family: incumbent
+#  - id: large_rerank2
+#    label: "3-large + <reranker>"
+#    embedder: "openai/text-embedding-3-large"
+#    dimensions: 3072
+#    reranker: "<slug from bench models>"
+#    family: challenger
+#
+# `input_type: true` sends search_query / search_document. Asymmetric models
+# (Cohere, Voyage, Nvidia embeddings) need it; OpenAI's do not.
